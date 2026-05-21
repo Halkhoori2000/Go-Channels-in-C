@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ConcurrencyLab — Go-Style Channel in C</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; }
+    a { color: #58a6ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header { background: #161b22; border-bottom: 1px solid #30363d; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    header .subtitle { font-size: 0.85rem; color: #8b949e; margin-top: 2px; }
+    .header-links { display: flex; gap: 12px; }
+    .btn { display: inline-block; padding: 8px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; border: none; text-decoration: none; }
+    .btn:hover { opacity: 0.85; text-decoration: none; }
+    .btn-secondary { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
+    main { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+    .hero { text-align: center; margin-bottom: 56px; }
+    .hero h2 { font-size: 2.2rem; font-weight: 700; margin-bottom: 12px; }
+    .hero p { font-size: 1.05rem; color: #8b949e; max-width: 640px; margin: 0 auto 28px; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 20px; }
+    .badge { background: #161b22; border: 1px solid #30363d; border-radius: 20px; padding: 4px 12px; font-size: 0.78rem; color: #8b949e; }
+    section { margin-bottom: 56px; }
+    section h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .feature-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+    .feature-card .icon { font-size: 1.5rem; margin-bottom: 10px; }
+    .feature-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
+    .feature-card p { font-size: 0.85rem; color: #8b949e; }
+    .code-block { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; overflow-x: auto; }
+    .code-block .comment { color: #484f58; }
+    .code-block .kw { color: #ff7b72; }
+    .code-block .type { color: #79c0ff; }
+    .code-block .fn { color: #d2a8ff; }
+    .code-block .str { color: #a5d6ff; }
+    .code-block .num { color: #79c0ff; }
+    .api-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .api-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+    .api-card .api-name { background: #21262d; padding: 10px 14px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; color: #d2a8ff; border-bottom: 1px solid #30363d; }
+    .api-card .api-desc { padding: 12px 14px; font-size: 0.82rem; color: #8b949e; }
+    .api-card .api-ret { padding: 0 14px 12px; font-size: 0.78rem; color: #484f58; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .flow-diagram { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; align-items: center; }
+    .flow-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; text-align: center; }
+    .flow-box .label { font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+    .flow-box .detail { font-size: 0.78rem; color: #8b949e; }
+    .flow-arrow { text-align: center; padding: 0 16px; }
+    .flow-arrow .arrow { font-size: 1.4rem; color: #30363d; }
+    .flow-arrow .caption { font-size: 0.72rem; color: #484f58; margin-top: 4px; }
+    footer { text-align: center; padding: 32px; border-top: 1px solid #21262d; color: #484f58; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>ConcurrencyLab</h1>
+    <div class="subtitle">Go-Style Channel — C · pthreads · Semaphores</div>
+  </div>
+  <div class="header-links">
+    <a class="btn btn-secondary" href="https://github.com/Halkhoori2000/ConcurrencyLab" target="_blank">GitHub</a>
+  </div>
+</header>
+
+<main>
+
+  <div class="hero">
+    <h2>Channels. In C.</h2>
+    <p>A complete Go-style channel primitive built with POSIX pthreads — buffered and unbuffered, blocking and non-blocking, with a multi-channel <code>select</code> that sleeps until any channel is ready.</p>
+    <div class="badge-row">
+      <span class="badge">C</span>
+      <span class="badge">pthreads</span>
+      <span class="badge">Mutex + Condvar</span>
+      <span class="badge">Semaphores</span>
+      <span class="badge">Circular Buffer</span>
+      <span class="badge">Linked List</span>
+      <span class="badge">CSP</span>
+    </div>
+  </div>
+
+  <section>
+    <h3>How a Channel Works</h3>
+    <div class="flow-diagram">
+      <div class="flow-box">
+        <div class="label">Sender Thread</div>
+        <div class="detail">channel_send(ch, data)<br/>blocks if buffer full</div>
+      </div>
+      <div class="flow-arrow">
+        <div class="arrow">→</div>
+        <div class="caption">mutex + condvar</div>
+      </div>
+      <div class="flow-box">
+        <div class="label">Receiver Thread</div>
+        <div class="detail">channel_receive(ch, &data)<br/>blocks if buffer empty</div>
+      </div>
+    </div>
+    <p style="margin-top:16px; font-size:0.82rem; color:#484f58;">Each channel holds a circular FIFO buffer, a mutex protecting all state, a <code>send</code> condvar (wakes receivers) and a <code>receive</code> condvar (wakes senders). Unbuffered channels (size=0) force rendezvous: the sender blocks until a receiver is present.</p>
+  </section>
+
+  <section>
+    <h3>API</h3>
+    <div class="api-grid">
+      <div class="api-card">
+        <div class="api-name">channel_create(size)</div>
+        <div class="api-desc">Create a buffered (size > 0) or unbuffered (size = 0) channel. Allocates mutex, condvars, and semaphore lists.</div>
+        <div class="api-ret">→ channel_t*</div>
+      </div>
+      <div class="api-card">
+        <div class="api-name">channel_send(ch, data)</div>
+        <div class="api-desc">Blocking send. Waits if buffer is full. Wakes a waiting receiver and any select callers on success.</div>
+        <div class="api-ret">→ SUCCESS | CLOSED_ERROR | GEN_ERROR</div>
+      </div>
+      <div class="api-card">
+        <div class="api-name">channel_receive(ch, &data)</div>
+        <div class="api-desc">Blocking receive. Waits if buffer is empty. Wakes a waiting sender and any select callers on success.</div>
+        <div class="api-ret">→ SUCCESS | CLOSED_ERROR | GEN_ERROR</div>
+      </div>
+      <div class="api-card">
+        <div class="api-name">channel_non_blocking_send/receive</div>
+        <div class="api-desc">Returns CHANNEL_FULL / CHANNEL_EMPTY immediately instead of blocking. Used internally by channel_select.</div>
+        <div class="api-ret">→ SUCCESS | CHANNEL_FULL | CHANNEL_EMPTY | CLOSED_ERROR</div>
+      </div>
+      <div class="api-card">
+        <div class="api-name">channel_select(list, count, &idx)</div>
+        <div class="api-desc">Go-style select. Registers a semaphore on each candidate channel, loops non-blocking attempts, sleeps on sem_wait until any channel posts. Sets selected_index on return.</div>
+        <div class="api-ret">→ SUCCESS | CLOSED_ERROR | GEN_ERROR</div>
+      </div>
+      <div class="api-card">
+        <div class="api-name">channel_close / channel_destroy</div>
+        <div class="api-desc">Close broadcasts to all blocked threads (CLOSED_ERROR). Destroy frees all memory; returns DESTROY_ERROR if called on an open channel.</div>
+        <div class="api-ret">→ SUCCESS | CLOSED_ERROR | DESTROY_ERROR</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h3>Key Design Decisions</h3>
+    <div class="features">
+      <div class="feature-card">
+        <div class="icon">🔒</div>
+        <h4>Mutex + Condvar Blocking</h4>
+        <p>All state (buffer, open flag) is protected by a single mutex per channel. Blocking send/receive use <code>pthread_cond_wait</code> inside a while loop to handle spurious wakeups.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🔔</div>
+        <h4>Semaphore-Based Select</h4>
+        <p>Each <code>channel_select</code> call creates one <code>sem_t</code> and registers it in every candidate channel's notification list. When a channel becomes ready, it posts all registered semaphores — waking every waiting select.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">📡</div>
+        <h4>Broadcast on Close</h4>
+        <p><code>channel_close</code> uses <code>pthread_cond_broadcast</code> (not signal) and posts all select semaphores to wake every blocked caller simultaneously with <code>CLOSED_ERROR</code>.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">♻️</div>
+        <h4>Circular FIFO Buffer</h4>
+        <p>The underlying store is a power-of-2 circular buffer with head/tail indices — O(1) enqueue and dequeue without dynamic allocation after creation.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h3>Channel Struct</h3>
+    <div class="code-block">
+<pre><span class="type">typedef</span> <span class="kw">struct</span> {
+    <span class="type">buffer_t</span>        *buffer;           <span class="comment">/* circular FIFO, size=0 → unbuffered */</span>
+    <span class="type">pthread_mutex_t</span>  mutex;
+    <span class="type">pthread_cond_t</span>   send;             <span class="comment">/* signalled when item added (wakes receivers) */</span>
+    <span class="type">pthread_cond_t</span>   receive;          <span class="comment">/* signalled when item removed (wakes senders) */</span>
+    <span class="type">bool</span>             open;
+    <span class="type">list_t</span>          *select_recv_sems; <span class="comment">/* sem_t* ptrs for select(RECV) callers */</span>
+    <span class="type">list_t</span>          *select_send_sems; <span class="comment">/* sem_t* ptrs for select(SEND) callers */</span>
+} <span class="type">channel_t</span>;
+
+<span class="comment">/* select entry — one per channel in a channel_select call */</span>
+<span class="type">typedef</span> <span class="kw">struct</span> {
+    <span class="type">channel_t</span>     *channel;
+    <span class="kw">enum</span> <span class="type">direction</span> dir;   <span class="comment">/* SEND or RECV */</span>
+    <span class="type">void</span>          *data;
+} <span class="type">select_t</span>;</pre>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>Built by <a href="https://github.com/Halkhoori2000" target="_blank">Hamdan Alkhoori</a> &nbsp;·&nbsp; The Pennsylvania State University</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+.DS_Store
+__MACOSX/
+*.o
+src/test
+src/stress
+src/stress_send_recv
