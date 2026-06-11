@@ -1,8 +1,8 @@
-# ConcurrencyLab — Go-Style Channel in C
+# Go Channels in C — Go-Style Channel Primitive with pthreads
 
 *CMPSC 473 — Operating Systems · The Pennsylvania State University · 2023*
 
-**[Live Showcase →](https://halkhoori2000.github.io/ConcurrencyLab/)**
+**[Live Showcase →](https://halkhoori2000.github.io/Go-Channels-in-C/)**
 
 A Go-inspired channel primitive implemented from scratch in C using POSIX threads — supporting buffered and unbuffered channels, blocking and non-blocking send/receive, graceful close/destroy, and a multi-channel `select` that blocks until any listed channel becomes ready.
 
